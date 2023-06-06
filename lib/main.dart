@@ -11,26 +11,7 @@ void main() {
   runApp(MyApp());
 }
 
-Future<double> getWeatherDaily(lat, lon) async {
-  var response = await http.get(Uri.parse(
-      "https://api.openweathermap.org/data/2.5/forecast?lat=$lat&lon=$lon&appid=$APIkey&units=metric"));
-  var data = jsonDecode(response.body);
-  return data['list'][0]['main']['temp'];
-}
 
-Future<String> getRickNdMorty(num) async {
-  var reponse1 = await http
-      .get(Uri.parse("https://rickandmortyapi.com/api/character/$num"));
-  var data1 = jsonDecode(reponse1.body);
-  return data1['image'];
-}
-
-Future<String> getRickNdMortyAll(num) async {
-  var reponse1 = await http
-      .get(Uri.parse("https://rickandmortyapi.com/api/character/$num"));
-  var data1 = jsonDecode(reponse1.body);
-  return data1['image'];
-}
 
 class MyApp extends StatefulWidget {
   @override
@@ -70,15 +51,35 @@ class _MyAppState extends State<MyApp> {
     return true;
   }
 
-  Future<void> _getCurrentPosition() async {
+  Future<Position> _getCurrentPosition() async {
     final hasPermission = await _handleLocationPermission();
-    if (!hasPermission) return;
-    await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
-        .then((Position position) {
-      setState(() => _currentPosition = position);
-    }).catchError((e) {
-      debugPrint(e);
-    });
+    if (!hasPermission) return Position(longitude: 0, latitude: 0, altitude: 0, timestamp: DateTime.now(), accuracy: 0, heading: 0, speed: 0, speedAccuracy: 0);
+    Position position=await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high); 
+    return position;
+  }
+    Future<double> getWeatherDaily() async {
+    String? _currentAddress;
+    Position? _currentPosition=await _getCurrentPosition();
+    var url =
+        "https://api.openweathermap.org/data/2.5/forecast?lat=${_currentPosition?.latitude ?? '12.971599'}&lon=${_currentPosition?.longitude ?? '77.593604'}&appid=$APIkey&units=metric";
+    var response = await http.get(Uri.parse(url));
+    var data = jsonDecode(response.body);
+    print("$url,$data");
+    return data['list'][0]['main']['temp'];
+  }
+
+  Future<String> getRickNdMorty(num) async {
+    var reponse1 = await http
+        .get(Uri.parse("https://rickandmortyapi.com/api/character/$num"));
+    var data1 = jsonDecode(reponse1.body);
+    return data1['image'];
+  }
+
+  Future<String> getRickNdMortyAll(num) async {
+    var reponse1 = await http
+        .get(Uri.parse("https://rickandmortyapi.com/api/character/$num"));
+    var data1 = jsonDecode(reponse1.body);
+    return data1['image'];
   }
 
   var questions = [
@@ -108,13 +109,12 @@ class _MyAppState extends State<MyApp> {
   late Future<double> temp;
   late Future<String> img;
   late Future<List> ApiResults;
-  String? _currentAddress;
+    String? _currentAddress;
   Position? _currentPosition;
   @override
-  void initState() {
+    void initState() {
     super.initState();
-    _getCurrentPosition();
-    temp = getWeatherDaily(_currentPosition?.latitude ?? "",_currentPosition?.longitude ?? "");
+    temp = getWeatherDaily();
     img = getRickNdMorty(questionIndex + 1);
   }
 
@@ -127,6 +127,7 @@ class _MyAppState extends State<MyApp> {
       score = 0;
       visible = false;
       img = getRickNdMorty(questionIndex + 1);
+      _getCurrentPosition();
     });
   }
 
