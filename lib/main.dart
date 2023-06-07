@@ -11,8 +11,6 @@ void main() {
   runApp(MyApp());
 }
 
-
-
 class MyApp extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
@@ -53,19 +51,31 @@ class _MyAppState extends State<MyApp> {
 
   Future<Position> _getCurrentPosition() async {
     final hasPermission = await _handleLocationPermission();
-    if (!hasPermission) return Position(longitude: 0, latitude: 0, altitude: 0, timestamp: DateTime.now(), accuracy: 0, heading: 0, speed: 0, speedAccuracy: 0);
-    Position position=await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high); 
+    if (!hasPermission) {
+      return Position(
+          longitude: 0,
+          latitude: 0,
+          altitude: 0,
+          timestamp: DateTime.now(),
+          accuracy: 0,
+          heading: 0,
+          speed: 0,
+          speedAccuracy: 0);
+    }
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
     return position;
   }
-    Future<double> getWeatherDaily() async {
+
+  Future<dynamic> getWeatherDaily() async {
     String? _currentAddress;
-    Position? _currentPosition=await _getCurrentPosition();
+    Position? _currentPosition = await _getCurrentPosition();
     var url =
-        "https://api.openweathermap.org/data/2.5/forecast?lat=${_currentPosition?.latitude ?? '12.971599'}&lon=${_currentPosition?.longitude ?? '77.593604'}&appid=$APIkey&units=metric";
+        "https://api.openweathermap.org/data/2.5/forecast?lat=${await _currentPosition?.latitude}&lon=${await _currentPosition?.longitude}&appid=$APIkey&units=metric";
     var response = await http.get(Uri.parse(url));
     var data = jsonDecode(response.body);
-    print("$url,$data");
-    return data['list'][0]['main']['temp'];
+    print("$url,${data['city']['name']}");
+    return data;
   }
 
   Future<String> getRickNdMorty(num) async {
@@ -106,13 +116,13 @@ class _MyAppState extends State<MyApp> {
       [0]
     ]
   ];
-  late Future<double> temp;
+  late Future<dynamic> temp;
   late Future<String> img;
   late Future<List> ApiResults;
-    String? _currentAddress;
+  String? _currentAddress;
   Position? _currentPosition;
   @override
-    void initState() {
+  void initState() {
     super.initState();
     temp = getWeatherDaily();
     img = getRickNdMorty(questionIndex + 1);
@@ -173,12 +183,12 @@ class _MyAppState extends State<MyApp> {
                         style: TextStyle(fontSize: 18),
                         textAlign: TextAlign.center),
                   ),
-                  FutureBuilder<double>(
+                  FutureBuilder<dynamic>(
                       future: temp,
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           return Text(
-                              'Temperature: ${snapshot.data.toString()}',
+                              "City: ${snapshot.data['city']['name']}\nTemperature: ${snapshot.data['list'][0]['main']['temp'].toString()}\nCoordinates:\nLatitude:${snapshot.data['city']['coord']['lat'].toString()}, Longitude:${snapshot.data['city']['coord']['lon'].toString()}",
                               style: TextStyle(fontSize: 18),
                               textAlign: TextAlign.center);
                         } else if (snapshot.hasError) {
